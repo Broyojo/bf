@@ -1,19 +1,18 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 )
 
 func main() {
-	var name string
-
-	flag.StringVar(&name, "name", "", "The name of the file")
-	flag.Parse()
+	name := os.Args[1]
+	output := os.Args[2]
 
 	src, err := ReadFile(name)
 	if err != nil {
@@ -21,48 +20,70 @@ func main() {
 	}
 
 	program := compile(src)
-	newName := strings.Replace(name, ".b", ".go", 1)
-	if err := WriteFile(newName, program); err != nil {
-		fmt.Println("compilation failed")
+
+	fmt.Println(program)
+
+	if err := WriteFile(output+".go", program); err != nil {
+		fmt.Println("could not write file")
 		return
 	}
 
-	_, err = exec.Command("go", "build", newName).Output()
+	_, err = exec.Command("go", "build", output+".go").Output()
 
 	if err != nil {
-		fmt.Println("compilation failed")
-		return
-	}
-
-	_, err = exec.Command("rm", "-rf", newName).Output()
-
-	if err != nil {
-		fmt.Println("could not delete temporary file")
+		fmt.Println("could not compile")
 		return
 	}
 }
 
+func scan(str string, start int, char byte) int {
+	count := 0
+	for i := start; i < len(str); i++ {
+		if str[i] != char {
+			return count
+		}
+		count++
+	}
+	return count
+}
+
+func clean(str string) string {
+	str = strings.ReplaceAll(str, " ", "")
+	str = strings.ReplaceAll(str, "\n", "")
+	str = strings.ReplaceAll(str, "\t", "")
+	return str
+}
+
 func compile(src string) string {
+	src = clean(src)
 	program := `package main
 import "fmt"
 func main() {
 var mem [30000]byte
 dp := 0
 `
-	for _, instr := range src {
-		switch instr {
+	for i := 0; i < len(src); i++ {
+		switch src[i] {
 		case '>':
-			program += "dp++"
+			n := scan(src, i, '>')
+			program += "dp += " + strconv.Itoa(n)
+			i += n
 		case '<':
-			program += "dp--"
+			n := scan(src, i, '<')
+			program += "dp -= " + strconv.Itoa(n)
+			i += n
 		case '+':
-			program += "mem[dp]++"
+			n := scan(src, i, '+')
+			program += "mem[dp] += " + strconv.Itoa(n)
+			i += n
 		case '-':
-			program += "mem[dp]--"
+			n := scan(src, i, '-')
+			program += "mem[dp] -= " + strconv.Itoa(n)
+			i += n
 		case '.':
 			program += "fmt.Printf(\"%c\", mem[dp])"
 		case ',':
-			panic("input reading not implemented yet")
+			panic("input reading not implemented yet: line " + strconv.Itoa(i))
 		case '[':
 			program += "for mem[dp] != 0 {"
 		case ']':
