@@ -9,17 +9,16 @@ import (
 )
 
 func main() {
-	fileName := "mandelbrot.b"
-	outputName := "hello"
+	fileName := "hanoi.b"
 
 	src, err := ReadFile(fileName)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	program := transpile(src)
+	program := compile(src)
 
-	if err := WriteFile(outputName+".go", program); err != nil {
+	if err := WriteFile(strings.Replace(fileName, ".b", ".go", 1), program); err != nil {
 		fmt.Println("could not write file")
 		return
 	}
@@ -52,7 +51,7 @@ func scan(src string, start int, char rune) int {
 	return n
 }
 
-func transpile(src string) string {
+func compile(src string) string {
 	src = clean(src)
 	program := `package main
 import "fmt"
