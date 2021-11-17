@@ -4,86 +4,86 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 )
 
 func main() {
-	name := os.Args[1]
-	output := os.Args[2]
+	fileName := "mandelbrot.b"
+	outputName := "hello"
 
-	src, err := ReadFile(name)
+	src, err := ReadFile(fileName)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	program := compile(src)
+	program := transpile(src)
 
-	fmt.Println(program)
-
-	if err := WriteFile(output+".go", program); err != nil {
+	if err := WriteFile(outputName+".go", program); err != nil {
 		fmt.Println("could not write file")
 		return
 	}
+	/*	_, err = exec.Command("go", "build", output+".go").Output()
 
-	_, err = exec.Command("go", "build", output+".go").Output()
-
-	if err != nil {
-		fmt.Println("could not compile")
-		return
-	}
-}
-
-func scan(str string, start int, char byte) int {
-	count := 0
-	for i := start; i < len(str); i++ {
-		if str[i] != char {
-			return count
+		if err != nil {
+			fmt.Println("could not compile")
+			return
 		}
-		count++
+	*/
+}
+
+func clean(src string) string {
+	return strings.Map(func(r rune) rune {
+		if strings.ContainsRune("<>+-.,[]", r) {
+			return r
+		}
+		return -1
+	}, src)
+}
+
+func scan(src string, start int, char rune) int {
+	var n int
+	for _, c := range src[start:] {
+		if c != char {
+			return n
+		}
+		n++
 	}
-	return count
+	return n
 }
 
-func clean(str string) string {
-	str = strings.ReplaceAll(str, " ", "")
-	str = strings.ReplaceAll(str, "\n", "")
-	str = strings.ReplaceAll(str, "\t", "")
-	return str
-}
-
-func compile(src string) string {
+func transpile(src string) string {
 	src = clean(src)
 	program := `package main
 import "fmt"
 func main() {
-var mem [30000]byte
-dp := 0
+var (
+mem [30000]byte
+dp  int
+)
 `
 	for i := 0; i < len(src); i++ {
 		switch src[i] {
 		case '>':
 			n := scan(src, i, '>')
 			program += "dp += " + strconv.Itoa(n)
-			i += n
+			i += n - 1
 		case '<':
 			n := scan(src, i, '<')
 			program += "dp -= " + strconv.Itoa(n)
-			i += n
+			i += n - 1
 		case '+':
 			n := scan(src, i, '+')
 			program += "mem[dp] += " + strconv.Itoa(n)
-			i += n
+			i += n - 1
 		case '-':
 			n := scan(src, i, '-')
 			program += "mem[dp] -= " + strconv.Itoa(n)
-			i += n
+			i += n - 1
 		case '.':
 			program += "fmt.Printf(\"%c\", mem[dp])"
 		case ',':
-			panic("input reading not implemented yet: line " + strconv.Itoa(i))
+			panic("input not implemented yet")
 		case '[':
 			program += "for mem[dp] != 0 {"
 		case ']':
