@@ -2,7 +2,7 @@
 ![](diagram.jpeg)
 
 ## Description
-This is a fully-featured Brainf\*ck transpiler. In other words, it converts Brainf\*ck source code to Go source code. I chose to do it this way because an interpreter would have been slower at executing the code. The transpiler will emit a `program.go` file which is the transpiled version of the input source code. 
+This program can transpile [Brainf\*ck](https://en.wikipedia.org/wiki/Brainfuck), an esoteric programming language, to Golang. For each symbol in the Brainf\*ck code, I translate it to the corresponding Go code. I chose to do it this way because an interpreter would have been slower at executing the code. The transpiler will emit a `program.go` file which is the transpiled version of the input source code. 
 
 ## How to Run
 ```
